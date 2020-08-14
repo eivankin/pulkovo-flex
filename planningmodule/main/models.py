@@ -6,6 +6,7 @@ class Theme(models.Model):
 
     class Meta:
         verbose_name = 'Тема'
+        verbose_name_plural = 'Темы'
 
 
 class Teacher(models.Model):
@@ -18,11 +19,12 @@ class Teacher(models.Model):
     additional_email = models.EmailField('Дополнительный e-mail', null=True)
     priority = models.IntegerField('Приоритет при распределении', 
                                    choices=PRIORITIES)
-    schedule = models.JSONField('График работы', default='{"type":0,"args":[5]}')
+    schedule = models.CharField('График работы', max_length=50, default='{"type":0,"args":[5]}')
     themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
 
     class Meta:
         verbose_name = 'Преподаватель'
+        verbose_name_plural = 'Преподаватели'
 
 
 class Subject(models.Model):
@@ -33,6 +35,7 @@ class Subject(models.Model):
 
     class Meta:
         verbose_name = 'Дисциплина'
+        verbose_name_plural = 'Дисциплины'
 
 
 class ScheduleTemplate(models.Model):
@@ -43,7 +46,8 @@ class ScheduleTemplate(models.Model):
         return f'{self.begin}-{self.end}'
 
     class Meta:
-        verbose_name = 'Шаблон дня'
+        verbose_name = 'Расписание лекций'
+        verbose_name_plural = 'Расписание лекций'
 
 
 class Course(models.Model):
@@ -54,6 +58,7 @@ class Course(models.Model):
 
     class Meta:
         verbose_name = 'Учебная программа'
+        verbose_name_plural = 'Учебные программы'
 
 
 class CourseTheme(models.Model):
@@ -69,6 +74,7 @@ class CourseTheme(models.Model):
 
     class Meta:
         verbose_name = 'Тема курса'
+        verbose_name_plural = 'Темы курса'
 
 
 class Classroom(models.Model):
@@ -84,6 +90,7 @@ class Classroom(models.Model):
 
     class Meta:
         verbose_name = 'Аудитория'
+        verbose_name_plural = 'Аудитории'
 
 
 class Lesson(models.Model):
@@ -98,3 +105,25 @@ class Lesson(models.Model):
 
     class Meta:
         verbose_name = 'Лекция'
+        verbose_name_plural = 'Лекции'
+
+
+class Vacation(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE,
+                                verbose_name='Преподаватель')
+    begin = models.DateField('Начало отпуска')
+    end = models.DateField('Конец отпуска')
+
+    class Meta:
+        verbose_name = 'Отпуск'
+        verbose_name_plural = 'Отпуска'
+
+
+class Day(models.Model):
+    date = models.DateField('Дата')
+    is_holiday = models.BooleanField('Выходной день')
+    shifts = models.CharField('Смены', max_length=50)
+
+    class Meta:
+        verbose_name = 'День'
+        verbose_name_plural = 'Дни'
