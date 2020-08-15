@@ -30,8 +30,6 @@ class ClassroomAdmin(MyModelAdmin):
                                       lesson_type=LESSON_TYPES[str(row[2])],
                                       config=CONFIGS[str(row[3])])
                 classroom.save()
-            
-            #os.remove(path)
             return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
@@ -40,15 +38,20 @@ class ClassroomAdmin(MyModelAdmin):
 class CourseAdmin(MyModelAdmin):
     def save_data(self, file):
         file_format = file.name.split('.')[-1]
-        if file_format == '.xls' or file_format == '.xlsx':
+        if file_format == 'xls' or file_format == 'xlsx':
             path = os.path.dirname(os.path.abspath(__file__)) + \
-                'files/course_import.' + file_format
+                '/files/course_import.' + file_format
             with open(path, 'wb+') as dest:
                 for chunk in file.chunks():
                     dest.write(chunk)
             
             table = pd.ExcelFile(path).parse('параметры программ')
-            #os.remove(path)
+            for index, row in table.iterrows():
+                if str(row[1]) != 'nan':
+                    subj, created = Subject.objects.get_or_create(name=str(row[1]))
+                course = Course(subject=subj, full_name=str(row[2]))
+                course.save()
+            return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
 
@@ -68,15 +71,14 @@ class TeacherAdmin(MyModelAdmin):
 class VacationAdmin(MyModelAdmin):
     def save_data(self, file):
         file_format = file.name.split('.')[-1]
-        if file_format == '.xls' or file_format == '.xlsx':
+        if file_format == 'xls' or file_format == 'xlsx':
             path = os.path.dirname(os.path.abspath(__file__)) + \
-                'files/vacation_import.' + file_format
+                '/files/vacation_import.' + file_format
             with open(path, 'wb+') as dest:
                 for chunk in file.chunks():
                     dest.write(chunk)
             
             table = pd.ExcelFile(path).parse('План')
-            #os.remove(path)
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
 

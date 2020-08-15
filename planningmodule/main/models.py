@@ -43,7 +43,7 @@ class Subject(models.Model):
     TYPES = [(False, 'Неавиационный персонал'),
                     (True, 'Авиационный персонал')]
     name = models.CharField('Наименование', max_length=255)
-    students_type = models.BooleanField('Тип', choices=TYPES)
+    students_type = models.BooleanField('Тип', choices=TYPES, null=True)
 
     def __str__(self):
         return self.name
@@ -66,13 +66,13 @@ class ScheduleTemplate(models.Model):
 
 
 class Course(models.Model):
-    name = models.CharField('Наименование', max_length=50)
+    name = models.CharField('Наименование', max_length=50, null=True)
     full_name = models.CharField('Полное наименование', max_length=255)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, 
                                 verbose_name='Дисциплина')
     
     def __str__(self):
-        return f'{self.name} | {self.full_name}'
+        return self.full_name
 
     class Meta:
         verbose_name = 'Учебная программа'
@@ -80,8 +80,8 @@ class Course(models.Model):
 
 
 class CourseTheme(models.Model):
-    TYPES = [(0, 'практические'), (1, 'теоретические'), 
-             (2, 'практические/теоретические')]
+    TYPES = [(0, 'практическая'), (1, 'теоретическая'), 
+             (2, 'оба типа')]
     course = models.ForeignKey(Course, on_delete=models.CASCADE, unique=True, 
                                verbose_name='Учебная программа')
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE, unique=True,
@@ -111,8 +111,9 @@ class Classroom(models.Model):
     lesson_type = models.IntegerField('Вид занятий', choices=LESSON_TYPES)
     config = models.IntegerField('Конфигурация аудитории', choices=CONFIGS)
     top_priority_subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, 
-                                             verbose_name='Преимущество у дисциплины')
-    possible_courses = models.ManyToManyField(Course, verbose_name='Подходит для программ')
+                                             verbose_name='Преимущество у дисциплины', 
+                                             related_name='priority_subj')
+    possible_subjects = models.ManyToManyField(Subject, verbose_name='Подходит для дисциплин')
 
     def __str__(self):
         return self.name
