@@ -1,14 +1,87 @@
 from django.contrib import admin
 from .models import *
+from .views import MyModelAdmin
+import pandas as pd
+import os
 
 
-admin.site.register(Teacher)
+@admin.register(Classroom)
+class ClassroomAdmin(MyModelAdmin):
+    def save_data(self, file):
+        LESSON_TYPES = {'практические': 0, 'теоретические': 1, 
+                    'практические/теоретические': 2, 
+                    'теоретические/практические': 2}
+        CONFIGS = {'с партами': 0, 
+                   'стулья без парт, для тренинговых форматов': 1, 
+                   'с партами,\n муляжи для Авиационной безопасности': 2, 
+                   'с партами, интерактивная доска': 3}
+        
+        file_format = file.name.split('.')[-1]
+        if file_format == 'xls' or file_format == 'xlsx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                '/files/classroom_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            table = pd.ExcelFile(path).parse('параметры аудиторий')
+            for index, row in table.iterrows():
+                classroom = Classroom(name=str(row[0]), capacity=int(row[1]), 
+                                      lesson_type=LESSON_TYPES[str(row[2])],
+                                      config=CONFIGS[str(row[3])])
+                classroom.save()
+            
+            #os.remove(path)
+            return []
+        return ('недопустимый формат файла, допустимы только xls и xlsx', )
+
+
+@admin.register(Course)
+class CourseAdmin(MyModelAdmin):
+    def save_data(self, file):
+        file_format = file.name.split('.')[-1]
+        if file_format == '.xls' or file_format == '.xlsx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                'files/course_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            table = pd.ExcelFile(path).parse('параметры программ')
+            #os.remove(path)
+        return ('недопустимый формат файла, допустимы только xls и xlsx', )
+
+
+@admin.register(CourseTheme)
+class CourseThemeAdmin(MyModelAdmin):
+    def save_data(self, file):
+        pass
+
+
+@admin.register(Teacher)
+class TeacherAdmin(MyModelAdmin):
+    def save_data(self, file):
+        pass
+
+
+@admin.register(Vacation)
+class VacationAdmin(MyModelAdmin):
+    def save_data(self, file):
+        file_format = file.name.split('.')[-1]
+        if file_format == '.xls' or file_format == '.xlsx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                'files/vacation_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            table = pd.ExcelFile(path).parse('План')
+            #os.remove(path)
+        return ('недопустимый формат файла, допустимы только xls и xlsx', )
+
+
 admin.site.register(Theme)
 admin.site.register(Subject)
 admin.site.register(ScheduleTemplate)
-admin.site.register(Course)
-admin.site.register(CourseTheme)
-admin.site.register(Classroom)
 admin.site.register(Lesson)
-admin.site.register(Vacation)
 admin.site.register(Day)

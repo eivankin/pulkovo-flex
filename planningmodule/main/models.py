@@ -17,12 +17,18 @@ class Teacher(models.Model):
                   (1, 'Минимальный'),
                   (2, 'Средний'),
                   (3, 'Максимальный')]
+    SCHEDULES = [(0, 'N дней в неделю (например, пятидневка)'),
+                 (1, 'Сменный'),
+                 (2, 'Индивидуальный (выходной после N дней)')]
     name = models.CharField('ФИО', max_length=255)
     email = models.EmailField('Корпоративный аккаунт')
     additional_email = models.EmailField('Дополнительный e-mail', null=True)
     priority = models.IntegerField('Приоритет при распределении', 
                                    choices=PRIORITIES)
-    schedule = models.CharField('График работы', max_length=50, default='{"type":0,"args":[5]}')
+    schedule_type = models.IntegerField('Тип графика работы', choices=SCHEDULES)
+    schedule_days = models.IntegerField('Сколько дней может работать (оставить пустым для сменного графика)', 
+                                        null=True)
+    shifts = models.BinaryField('Смены', max_length=4, null=True)
     themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
 
     def __str__(self):
@@ -74,12 +80,15 @@ class Course(models.Model):
 
 
 class CourseTheme(models.Model):
+    TYPES = [(0, 'практические'), (1, 'теоретические'), 
+             (2, 'практические/теоретические')]
     course = models.ForeignKey(Course, on_delete=models.CASCADE, unique=True, 
                                verbose_name='Учебная программа')
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE, unique=True,
                               verbose_name='Тема')
     number = models.CharField('Номер темы в курсе', max_length=5)
     hours = models.IntegerField('Количество часов')
+    theme_type = models.IntegerField('Тип темы', choices=TYPES)
 
     def __str__(self):
         return f'Тема {self.number}. {self.theme.name}'
@@ -92,10 +101,15 @@ class CourseTheme(models.Model):
 class Classroom(models.Model):
     LESSON_TYPES = [(0, 'практические'), (1, 'теоретические'), 
                     (2, 'практические/теоретические')]
+    CONFIGS = [(0, 'с партами'), 
+               (1, 'стулья без парт, для тренинговых форматов'), 
+               (2, 'с партами, муляжи для Авиационной безопасности'),
+               (3, 'с партами, интерактивная доска')]
     name = models.CharField('Наименование', max_length=10)
-    email = models.EmailField('E-mail')
+    email = models.EmailField('E-mail', null=True)
     capacity = models.IntegerField('Количество мест')
     lesson_type = models.IntegerField('Вид занятий', choices=LESSON_TYPES)
+    config = models.IntegerField('Конфигурация аудитории', choices=CONFIGS)
     top_priority_subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, 
                                              verbose_name='Преимущество у дисциплины')
     possible_courses = models.ManyToManyField(Course, verbose_name='Подходит для программ')
@@ -139,7 +153,7 @@ class Vacation(models.Model):
 class Day(models.Model):
     date = models.DateField('Дата')
     is_holiday = models.BooleanField('Выходной день')
-    shifts = models.CharField('Смены', max_length=50)
+    shifts = models.BinaryField('Смены', max_length=4)
 
     def __str__(self):
         return self.date
