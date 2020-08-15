@@ -56,11 +56,11 @@ class Teacher(models.Model):
     schedule_type = models.IntegerField('Тип графика работы', choices=SCHEDULES)
     schedule_days = models.IntegerField('Сколько дней может работать (оставить пустым для сменного графика)', 
                                         null=True, blank=True)
-    shifts = models.BinaryField('Смены', max_length=4, null=True, blank=True)
+    shifts = models.BinaryField('В какие смены может работать (для сменного графика)', max_length=4, null=True, blank=True, editable=True)
     themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
     subject = models.ForeignKey(Subject, verbose_name='Дисциплина', 
                                 on_delete=models.CASCADE, null=True)
-    courses = models.ManyToManyField(Course)
+    courses = models.ManyToManyField(Course, verbose_name='Учебные дисциплины')
 
     def __str__(self):
         return self.name
@@ -161,7 +161,7 @@ class Vacation(models.Model):
 class Day(models.Model):
     date = models.DateField('Дата')
     is_holiday = models.BooleanField('Выходной день')
-    shifts = models.BinaryField('Смены', max_length=4)
+    shifts = models.BinaryField('Смены', max_length=4, editable=True)
 
     def __str__(self):
         return str(self.date)

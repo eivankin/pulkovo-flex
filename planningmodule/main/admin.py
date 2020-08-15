@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import *
 from .views import MyModelAdmin
-from .forms import BinaryWidget
+from .forms import BinaryWidget, MultiSelectors
 import pandas as pd
 import numpy as np
 import os
@@ -111,10 +111,12 @@ class CourseAdmin(MyModelAdmin):
 
 @admin.register(Teacher)
 class TeacherAdmin(MyModelAdmin):
-    # SHIFTS = [(0, 'Смена № 1'), ()]
-    # formfield_overrides = {
-    #     models.BinaryField: {'widget': BinaryWidget(choices=())},
-    # }
+    SHIFTS = [(0, 'Смена № 1'), (1, 'Смена № 2'),
+              (2, 'Смена № 3'), (3, 'Смена № 4')]
+    formfield_overrides = {
+        models.BinaryField: {'widget': BinaryWidget(choices=SHIFTS)},
+    }
+    
     def save_data(self, file):
         file_format = file.name.split('.')[-1]
         if file_format == 'xls' or file_format == 'xlsx':
@@ -152,6 +154,9 @@ class VacationAdmin(MyModelAdmin):
 
 @admin.register(Day)
 class DayAdmin(MyModelAdmin):
+    formfield_overrides = {
+        models.BinaryField: {'widget': MultiSelectors},
+    }
     def save_data(self, file):
         SHIFT_TO_HEX = {'nan': '00', 'д': '01', 'н': '02'}
         file_format = file.name.split('.')[-1]
