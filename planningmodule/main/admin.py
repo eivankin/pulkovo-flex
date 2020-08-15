@@ -1,8 +1,14 @@
 from django.contrib import admin
 from .models import *
 from .views import MyModelAdmin
+from .forms import BinaryWidget
 import pandas as pd
+import numpy as np
 import os
+from docx import Document
+from django.urls import path
+from django.utils import timezone
+from requests import get
 
 
 @admin.register(Classroom)
@@ -59,6 +65,13 @@ class ClassroomAdmin(MyModelAdmin):
 
 @admin.register(Course)
 class CourseAdmin(MyModelAdmin):
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('<int:id>/import/', self.import_themes),
+        ]
+        return my_urls + urls
+
     def save_data(self, file):
         file_format = file.name.split('.')[-1]
         if file_format == 'xls' or file_format == 'xlsx':
@@ -76,18 +89,50 @@ class CourseAdmin(MyModelAdmin):
                 course.save()
             return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
-
-
-@admin.register(CourseTheme)
-class CourseThemeAdmin(MyModelAdmin):
-    def save_data(self, file):
+    
+    def import_themes(self, request, id):
         pass
+
+    def save_themes(self, file):
+        file_format = file.name.split('.')[-1]
+        if file_format == 'docx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                '/files/theme_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            doc = Document(path)
+            for table in doc.tables:
+                pass
+            return []
+        return ('недопустимый формат файла, допустим только docx', )
 
 
 @admin.register(Teacher)
 class TeacherAdmin(MyModelAdmin):
+    # SHIFTS = [(0, 'Смена № 1'), ()]
+    # formfield_overrides = {
+    #     models.BinaryField: {'widget': BinaryWidget(choices=())},
+    # }
     def save_data(self, file):
-        pass
+        file_format = file.name.split('.')[-1]
+        if file_format == 'xls' or file_format == 'xlsx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                '/files/teacher_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            table = pd.ExcelFile(path).parse('параметры преподавателей')
+            for index, row in table.iterrows():
+                teacher = Teacher(
+                    name=str(row[1]), 
+                    subject=Subject.objects.get(name=str(row[2])),
+                    
+                )
+            return []
+        return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
 
 @admin.register(Vacation)
@@ -105,8 +150,45 @@ class VacationAdmin(MyModelAdmin):
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
 
+@admin.register(Day)
+class DayAdmin(MyModelAdmin):
+    def save_data(self, file):
+        SHIFT_TO_HEX = {'nan': '00', 'д': '01', 'н': '02'}
+        file_format = file.name.split('.')[-1]
+        if file_format == 'xls' or file_format == 'xlsx':
+            path = os.path.dirname(os.path.abspath(__file__)) + \
+                '/files/day_import.' + file_format
+            with open(path, 'wb+') as dest:
+                for chunk in file.chunks():
+                    dest.write(chunk)
+            
+            table = pd.ExcelFile(path).parse('график смен')
+            year = timezone.now().year
+            for i in range(12):
+                month = table.iloc[i * 7 + 1:(i + 1) * 7, :32]
+                month = month[1:].set_index('График работы смен на 2019 год').T
+                month = month.rename(columns={np.nan: 'День месяца'}).dropna(how='all')
+                month = month.astype({'День месяца': 'int8'}).set_index('День месяца')
+                month = month.sort_index(axis=1)
+                for index, row in month.iterrows():
+                    date = timezone.datetime(year=year, month=i + 1, day=index)
+                    day = Day(
+                        shifts=bytearray.fromhex(''.join([SHIFT_TO_HEX[str(x)] for x in row])),
+                        is_holiday=self.check_holiday(date),
+                        date=date) 
+                    day.save()
+        return ('недопустимый формат файла, допустимы только xls и xlsx', )
+    
+    def check_holiday(self, date):
+        if date.weekday() > 4:
+            return True
+        return bool(int(get(
+            f'https://isdayoff.ru/api/getdata?year={date.year}&month={date.month}&day={date.day}').content))
+
+
+
+admin.site.register(CourseTheme)
 admin.site.register(Theme)
 admin.site.register(Subject)
 admin.site.register(ScheduleTemplate)
 admin.site.register(Lesson)
-admin.site.register(Day)

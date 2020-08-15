@@ -12,33 +12,6 @@ class Theme(models.Model):
         verbose_name_plural = 'Темы'
 
 
-class Teacher(models.Model):
-    PRIORITIES = [(0, 'Если нет других свободных преподавателей'),
-                  (1, 'Минимальный'),
-                  (2, 'Средний'),
-                  (3, 'Максимальный')]
-    SCHEDULES = [(0, 'N дней в неделю (например, пятидневка)'),
-                 (1, 'Сменный'),
-                 (2, 'Индивидуальный (выходной после N дней)')]
-    name = models.CharField('ФИО', max_length=255)
-    email = models.EmailField('Корпоративный аккаунт')
-    additional_email = models.EmailField('Дополнительный e-mail', null=True, blank=True)
-    priority = models.IntegerField('Приоритет при распределении', 
-                                   choices=PRIORITIES)
-    schedule_type = models.IntegerField('Тип графика работы', choices=SCHEDULES)
-    schedule_days = models.IntegerField('Сколько дней может работать (оставить пустым для сменного графика)', 
-                                        null=True, blank=True)
-    shifts = models.BinaryField('Смены', max_length=4, null=True, blank=True)
-    themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Преподаватель'
-        verbose_name_plural = 'Преподаватели'
-
-
 class Subject(models.Model):
     TYPES = [(False, 'Неавиационный персонал'),
                     (True, 'Авиационный персонал')]
@@ -53,18 +26,6 @@ class Subject(models.Model):
         verbose_name_plural = 'Дисциплины'
 
 
-class ScheduleTemplate(models.Model):
-    begin = models.TimeField('Начало лекции')
-    end = models.TimeField('Конец лекции')
-
-    def __str__(self):
-        return f'{self.begin.strftime("%H:%M")}-{self.end.strftime("%H:%M")}'
-
-    class Meta:
-        verbose_name = 'Расписание лекций'
-        verbose_name_plural = 'Расписание лекций'
-
-
 class Course(models.Model):
     name = models.CharField('Наименование', max_length=50, null=True)
     full_name = models.CharField('Полное наименование', max_length=255)
@@ -77,6 +38,48 @@ class Course(models.Model):
     class Meta:
         verbose_name = 'Учебная программа'
         verbose_name_plural = 'Учебные программы'
+
+
+class Teacher(models.Model):
+    PRIORITIES = [(0, 'Если нет других свободных преподавателей'),
+                  (1, 'Минимальный'),
+                  (2, 'Средний'),
+                  (3, 'Максимальный')]
+    SCHEDULES = [(0, 'N дней в неделю (например, пятидневка)'),
+                 (1, 'Сменный'),
+                 (2, 'Индивидуальный (выходной после N дней)')]
+    name = models.CharField('ФИО', max_length=255)
+    email = models.EmailField('Корпоративный аккаунт', null=True)
+    additional_email = models.EmailField('Дополнительный e-mail', null=True, blank=True)
+    priority = models.IntegerField('Приоритет при распределении', 
+                                   choices=PRIORITIES)
+    schedule_type = models.IntegerField('Тип графика работы', choices=SCHEDULES)
+    schedule_days = models.IntegerField('Сколько дней может работать (оставить пустым для сменного графика)', 
+                                        null=True, blank=True)
+    shifts = models.BinaryField('Смены', max_length=4, null=True, blank=True)
+    themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
+    subject = models.ForeignKey(Subject, verbose_name='Дисциплина', 
+                                on_delete=models.CASCADE, null=True)
+    courses = models.ManyToManyField(Course)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Преподаватель'
+        verbose_name_plural = 'Преподаватели'
+
+
+class ScheduleTemplate(models.Model):
+    begin = models.TimeField('Начало лекции')
+    end = models.TimeField('Конец лекции')
+
+    def __str__(self):
+        return f'{self.begin.strftime("%H:%M")}-{self.end.strftime("%H:%M")}'
+
+    class Meta:
+        verbose_name = 'Расписание лекций'
+        verbose_name_plural = 'Расписание лекций'
 
 
 class CourseTheme(models.Model):
@@ -96,6 +99,10 @@ class CourseTheme(models.Model):
     class Meta:
         verbose_name = 'Тема курса'
         verbose_name_plural = 'Темы курса'
+
+
+# сlass Group(models.Model):
+#     pass
 
 
 class Classroom(models.Model):
@@ -157,7 +164,7 @@ class Day(models.Model):
     shifts = models.BinaryField('Смены', max_length=4)
 
     def __str__(self):
-        return self.date
+        return str(self.date)
 
     class Meta:
         verbose_name = 'День'
