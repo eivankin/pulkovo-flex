@@ -1,3 +1,5 @@
 Django
 pandas
 xlrd
+python-docx
+requests
