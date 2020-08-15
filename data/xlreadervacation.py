@@ -1,17 +1,20 @@
-from docx import Document
+
 from glob import glob
 import os
 import pandas as pd
-from docx import Document
 
 if __name__ == '__main__':
 
-    paths = glob(os.path.dirname(os.path.abspath(__file__)) + '/' + '*.docx', recursive=True)
+    paths = glob(os.path.dirname(os.path.abspath(__file__)) + '/Отпуска.xls', recursive=True)
 
-    row = (0, '')
+
     bigdata = []
-    needcolumns = ('Наименование разделов и тем', 'Всего (час)', 'Т', 'Т / ДОТ, ЭО* )', 'ПЗ', 'СП', 'Форма контроля')
     for path in paths:
+        xl = pd.ExcelFile(path)
+        for sheet_name in xl.sheet_names:
+            minidata = xl.parse(sheet_name=sheet_name)
+            bigdata.append(minidata)
+        """
         document = Document(path)
 
 
@@ -30,10 +33,10 @@ if __name__ == '__main__':
             dictionary.update({collumns[col[0]]:tuple(col[1])})
         frame = pd.DataFrame(dictionary)
         bigdata.append(frame)
+        """
 
-    print(bigdata[0].sample())
 
-    Excel = pd.ExcelWriter('ExcelProgramms.xlsx')
+    Excel = pd.ExcelWriter('ExcelHolidays.xlsx')
     for sheet_id in range(len(bigdata)):
-        bigdata[sheet_id].to_excel(excel_writer=Excel ,sheet_name='Programm '+ str(sheet_id))
+        bigdata[sheet_id].to_excel(excel_writer=Excel ,sheet_name='Hooli '+ str(sheet_id))
     Excel.save()
