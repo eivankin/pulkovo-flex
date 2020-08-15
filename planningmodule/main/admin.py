@@ -29,9 +29,32 @@ class ClassroomAdmin(MyModelAdmin):
                 classroom = Classroom(name=str(row[0]), capacity=int(row[1]), 
                                       lesson_type=LESSON_TYPES[str(row[2])],
                                       config=CONFIGS[str(row[3])])
+                classroom.top_priority_subject = self.select_subjects(str(row[4]))
                 classroom.save()
+                for subj in self.select_subjects(str(row[5]), 0):
+                    classroom.possible_subjects.add(subj)
             return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
+    
+    def select_subjects(self, subj, mode=1):
+        """mode=0: для допустимых дисциплин
+        mode=1: для приоритетных"""
+        subj = subj.replace('\n', ' ')
+        if mode:
+            if subj == 'нет':
+                return None
+            return Subject.objects.get(name=subj)
+        if subj == 'все дисциплины':
+            return Subject.objects.all()
+        if subj.startswith('кроме'):
+            return Subject.objects.exclude(name=subj[6:])
+        if ',' in subj:
+            return Subject.objects.filter(name=subj.split(',')[0])
+        if ';' in subj:
+            subjs = subj.split('; ')
+            return Subject.objects.filter(name=subjs[0]).union(Subject.objects.filter(name=subjs[1]))
+        return Subject.objects.filter(name=subj)    
+
 
 
 @admin.register(Course)

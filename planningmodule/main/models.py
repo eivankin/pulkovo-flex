@@ -22,13 +22,13 @@ class Teacher(models.Model):
                  (2, 'Индивидуальный (выходной после N дней)')]
     name = models.CharField('ФИО', max_length=255)
     email = models.EmailField('Корпоративный аккаунт')
-    additional_email = models.EmailField('Дополнительный e-mail', null=True)
+    additional_email = models.EmailField('Дополнительный e-mail', null=True, blank=True)
     priority = models.IntegerField('Приоритет при распределении', 
                                    choices=PRIORITIES)
     schedule_type = models.IntegerField('Тип графика работы', choices=SCHEDULES)
     schedule_days = models.IntegerField('Сколько дней может работать (оставить пустым для сменного графика)', 
-                                        null=True)
-    shifts = models.BinaryField('Смены', max_length=4, null=True)
+                                        null=True, blank=True)
+    shifts = models.BinaryField('Смены', max_length=4, null=True, blank=True)
     themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
 
     def __str__(self):
@@ -106,13 +106,13 @@ class Classroom(models.Model):
                (2, 'с партами, муляжи для Авиационной безопасности'),
                (3, 'с партами, интерактивная доска')]
     name = models.CharField('Наименование', max_length=10)
-    email = models.EmailField('E-mail', null=True)
+    email = models.EmailField('E-mail', null=True, blank=True)
     capacity = models.IntegerField('Количество мест')
     lesson_type = models.IntegerField('Вид занятий', choices=LESSON_TYPES)
     config = models.IntegerField('Конфигурация аудитории', choices=CONFIGS)
     top_priority_subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, 
                                              verbose_name='Преимущество у дисциплины', 
-                                             related_name='priority_subj')
+                                             related_name='priority_subj', blank=True)
     possible_subjects = models.ManyToManyField(Subject, verbose_name='Подходит для дисциплин')
 
     def __str__(self):
