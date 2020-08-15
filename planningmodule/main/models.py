@@ -4,8 +4,12 @@ from django.db import models
 class Theme(models.Model):
     name = models.CharField('Наименование', max_length=255)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = 'Тема'
+        verbose_name_plural = 'Темы'
 
 
 class Teacher(models.Model):
@@ -18,11 +22,15 @@ class Teacher(models.Model):
     additional_email = models.EmailField('Дополнительный e-mail', null=True)
     priority = models.IntegerField('Приоритет при распределении', 
                                    choices=PRIORITIES)
-    schedule = models.JSONField('График работы', default='{"type":0,"args":[5]}')
+    schedule = models.CharField('График работы', max_length=50, default='{"type":0,"args":[5]}')
     themes = models.ManyToManyField(Theme, verbose_name='Может проводить занятия по темам')
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Преподаватель'
+        verbose_name_plural = 'Преподаватели'
 
 
 class Subject(models.Model):
@@ -31,8 +39,12 @@ class Subject(models.Model):
     name = models.CharField('Наименование', max_length=255)
     students_type = models.BooleanField('Тип', choices=TYPES)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = 'Дисциплина'
+        verbose_name_plural = 'Дисциплины'
 
 
 class ScheduleTemplate(models.Model):
@@ -40,10 +52,11 @@ class ScheduleTemplate(models.Model):
     end = models.TimeField('Конец лекции')
 
     def __str__(self):
-        return f'{self.begin}-{self.end}'
+        return f'{self.begin.strftime("%H:%M")}-{self.end.strftime("%H:%M")}'
 
     class Meta:
-        verbose_name = 'Шаблон дня'
+        verbose_name = 'Расписание лекций'
+        verbose_name_plural = 'Расписание лекций'
 
 
 class Course(models.Model):
@@ -51,9 +64,13 @@ class Course(models.Model):
     full_name = models.CharField('Полное наименование', max_length=255)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, 
                                 verbose_name='Дисциплина')
+    
+    def __str__(self):
+        return f'{self.name} | {self.full_name}'
 
     class Meta:
         verbose_name = 'Учебная программа'
+        verbose_name_plural = 'Учебные программы'
 
 
 class CourseTheme(models.Model):
@@ -69,6 +86,7 @@ class CourseTheme(models.Model):
 
     class Meta:
         verbose_name = 'Тема курса'
+        verbose_name_plural = 'Темы курса'
 
 
 class Classroom(models.Model):
@@ -82,8 +100,12 @@ class Classroom(models.Model):
                                              verbose_name='Преимущество у дисциплины')
     possible_courses = models.ManyToManyField(Course, verbose_name='Подходит для программ')
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = 'Аудитория'
+        verbose_name_plural = 'Аудитории'
 
 
 class Lesson(models.Model):
@@ -98,3 +120,30 @@ class Lesson(models.Model):
 
     class Meta:
         verbose_name = 'Лекция'
+        verbose_name_plural = 'Лекции'
+
+
+class Vacation(models.Model):
+    TYPES = [(False, 'очередной'), (True, 'дополнительный')]
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE,
+                                verbose_name='Преподаватель')
+    begin = models.DateField('Начало отпуска')
+    end = models.DateField('Конец отпуска')
+    vacation_type = models.BooleanField('Тип отпуска', choices=TYPES)
+
+    class Meta:
+        verbose_name = 'Отпуск'
+        verbose_name_plural = 'Отпуска'
+
+
+class Day(models.Model):
+    date = models.DateField('Дата')
+    is_holiday = models.BooleanField('Выходной день')
+    shifts = models.CharField('Смены', max_length=50)
+
+    def __str__(self):
+        return self.date
+
+    class Meta:
+        verbose_name = 'День'
+        verbose_name_plural = 'Дни'
