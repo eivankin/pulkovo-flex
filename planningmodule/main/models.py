@@ -49,6 +49,7 @@ class Teacher(models.Model):
                  (1, 'Сменный'),
                  (2, 'Индивидуальный (выходной после N дней)')]
     name = models.CharField('ФИО', max_length=255)
+    employee_number = models.CharField('Табельный номер', max_length=10, null=True, unique=True)
     email = models.EmailField('Корпоративный аккаунт', null=True)
     additional_email = models.EmailField('Дополнительный e-mail', null=True, blank=True)
     priority = models.IntegerField('Приоритет при распределении', 
