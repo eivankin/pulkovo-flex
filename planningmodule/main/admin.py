@@ -161,16 +161,37 @@ class TeacherAdmin(MyModelAdmin):
                 for chunk in file.chunks():
                     dest.write(chunk)
             
+            # TODO
             table = pd.ExcelFile(path).parse('параметры преподавателей')
             for index, row in table.iterrows():
+                courses = [int(x) for x in str(row[3]).split(';')]
+                themes = self.select_themes(str(row[5]))
+                s_type, days = 0, 5
                 teacher = Teacher(
                     name=str(row[1]), 
                     subject=Subject.objects.get(name=str(row[2])),
-                    
+                    priority=self.get_priority_lvl(str(row[4])),
+                    schedule_type=s_type,
+                    schedule_days=days
                 )
                 teacher.save()
+
+                for c in courses:
+                    teacher.courses.add(Course.objects.get(pk=c))
+                
+                for t in themes:
+                    teacher.themes.add(t)
+                
             return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
+
+    def select_themes(self, themes):
+        # TODO
+        return []
+    
+    def get_priority_lvl(self, priority):
+        # TODO
+        return 0
 
 
 @admin.register(Vacation)
