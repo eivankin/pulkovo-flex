@@ -122,7 +122,6 @@ class CourseAdmin(MyModelAdmin):
             doc = Document(path)
             for table in doc.tables:
                 for row in table.rows:
-                    if 
                     c1 = row.cells[idx].text
                     if c1.startswith('Тема') or c1.startswith('Итог'):
                         if c1.startswith('Тема'):
