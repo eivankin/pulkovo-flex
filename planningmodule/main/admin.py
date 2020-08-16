@@ -149,6 +149,24 @@ class VacationAdmin(MyModelAdmin):
                     dest.write(chunk)
             
             table = pd.ExcelFile(path).parse('План')
+            year = timezone.now().year
+            for index, row in table.iterrows():
+                if len(str(row[1])) > 3:
+                    try:
+                        teacher = Teacher.objects.get(name__contains=str(row[1]).split(' ')[0])
+                    except Teacher.DoesNotExist:
+                        continue
+                    vac_type = bool(int(row[2]) - 1)
+                    for m, i in enumerate(range(4, 28, 2), start=1):
+                        decade, duration = int(row[i]), int(row[i + 1])
+                        vac = Vacation(
+                            teacher=teacher, vacation_type=vac_type,
+                            begin=timezone.datetime(year=year, month=m, day=decade * 10),
+                            end=timezone.datetime(year=year, month=m, day=decade * 10 + duration)
+                        )
+                        vac.save()
+            return []
+
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 
 
@@ -182,6 +200,7 @@ class DayAdmin(MyModelAdmin):
                         is_holiday=self.check_holiday(date),
                         date=date) 
                     day.save()
+            return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
     
     def check_holiday(self, date):
