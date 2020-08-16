@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import *
-from .views import MyModelAdmin
+from .views import *
 from .forms import BinaryWidget, MultiSelectors
 import pandas as pd
 import numpy as np
@@ -68,7 +68,7 @@ class CourseAdmin(MyModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            path('<int:id>/import/', self.import_themes),
+            path('<int:id>/change/import/', self.import_themes),
         ]
         return my_urls + urls
 
@@ -91,9 +91,25 @@ class CourseAdmin(MyModelAdmin):
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
     
     def import_themes(self, request, id):
-        pass
+        errors = []
+        if request.method == 'POST':
+            form = ImportForm(request.POST)
+            errors = self.save_themes(request.FILES['file'], id)
+            if not errors:
+                messages.info(request, 'Темы успешно импортированы')
+            else:
+                messages.error(request, f'Не удалось импортировать темы: {", ".join(errors)}')
+        form = ImportForm()
+        context = dict(self.admin_site.each_context(request), form=form)
+        return render(request, 'main/import.html', context)
 
-    def save_themes(self, file):
+    def save_themes(self, file, id):
+        def to_float(s):
+            try: 
+                return float(s)
+            except ValueError:
+                return 0 
+        
         file_format = file.name.split('.')[-1]
         if file_format == 'docx':
             path = os.path.dirname(os.path.abspath(__file__)) + \
@@ -104,7 +120,25 @@ class CourseAdmin(MyModelAdmin):
             
             doc = Document(path)
             for table in doc.tables:
-                pass
+                for row in table.rows:
+                    c1 = row.cells[1].text
+                    if c1.startswith('Тема') or c1.startswith('Итог'):
+                        if c1.startswith('Тема'):
+                            th = c1.split(' ')
+                            number, name = th[1], ' '.join(th[2:])
+                        else:
+                            number, name = '', c1
+                        t_h, p_h = map(lambda x: to_float(x.text.replace(',', '.')), 
+                                       row.cells[3:5])
+
+                        theme, created = Theme.objects.get_or_create(name=name)
+                        c_theme = CourseTheme(
+                            course=Course.objects.get(pk=id),
+                            theme=theme, number=number,
+                            p_hours=p_h,
+                            t_hours=t_h
+                        )
+                        c_theme.save()
             return []
         return ('недопустимый формат файла, допустим только docx', )
 
@@ -133,6 +167,7 @@ class TeacherAdmin(MyModelAdmin):
                     subject=Subject.objects.get(name=str(row[2])),
                     
                 )
+                teacher.save()
             return []
         return ('недопустимый формат файла, допустимы только xls и xlsx', )
 

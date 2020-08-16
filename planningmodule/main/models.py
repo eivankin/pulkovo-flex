@@ -89,16 +89,16 @@ class CourseTheme(models.Model):
                                verbose_name='Учебная программа')
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE,
                               verbose_name='Тема')
-    number = models.CharField('Номер темы в курсе', max_length=5)
-    hours = models.FloatField('Количество часов')
-    theme_type = models.IntegerField('Тип темы', choices=TYPES)
+    number = models.CharField('Номер темы в курсе', max_length=5, null=True)
+    p_hours = models.FloatField('Количество часов практики', default=0)
+    t_hours = models.FloatField('Количество часов теории', default=0)
 
     def __str__(self):
-        return f'Тема {self.number}. {self.theme.name}'
+        return f'Курс {self.course.pk}. {f"Тема {self.number}. " if self.number else ""}{self.theme.name}'
 
     class Meta:
         verbose_name = 'Тема курса'
-        verbose_name_plural = 'Темы курса'
+        verbose_name_plural = 'Темы курсов'
 
 
 class Group(models.Model):
@@ -113,7 +113,8 @@ class Group(models.Model):
 class GroupTheme(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE)
-    hours_left = models.FloatField()
+    p_hours_left = models.FloatField(null=True)
+    t_hours_left = models.FloatField(null=True)
 
 
 class Classroom(models.Model):
