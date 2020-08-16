@@ -111,6 +111,7 @@ class CourseAdmin(MyModelAdmin):
                 return 0 
         
         file_format = file.name.split('.')[-1]
+        idx = 0 if 'DI-L30В' in file.name else 1
         if file_format == 'docx':
             path = os.path.dirname(os.path.abspath(__file__)) + \
                 '/files/theme_import.' + file_format
@@ -121,7 +122,8 @@ class CourseAdmin(MyModelAdmin):
             doc = Document(path)
             for table in doc.tables:
                 for row in table.rows:
-                    c1 = row.cells[1].text
+                    if 
+                    c1 = row.cells[idx].text
                     if c1.startswith('Тема') or c1.startswith('Итог'):
                         if c1.startswith('Тема'):
                             th = c1.split(' ')
@@ -129,7 +131,7 @@ class CourseAdmin(MyModelAdmin):
                         else:
                             number, name = '', c1
                         t_h, p_h = map(lambda x: to_float(x.text.replace(',', '.')), 
-                                       row.cells[3:5])
+                                       row.cells[idx + 2:idx + 4])
 
                         theme, created = Theme.objects.get_or_create(name=name)
                         c_theme = CourseTheme(

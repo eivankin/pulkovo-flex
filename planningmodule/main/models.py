@@ -94,7 +94,7 @@ class CourseTheme(models.Model):
     t_hours = models.FloatField('Количество часов теории', default=0)
 
     def __str__(self):
-        return f'Курс {self.course.pk}. {f"Тема {self.number}. " if self.number else ""}{self.theme.name}'
+        return f'Курс {self.course.pk}. {f"Тема {self.number} " if self.number else ""}{self.theme.name}'
 
     class Meta:
         verbose_name = 'Тема курса'
