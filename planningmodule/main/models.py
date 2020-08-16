@@ -85,12 +85,12 @@ class ScheduleTemplate(models.Model):
 class CourseTheme(models.Model):
     TYPES = [(0, 'практическая'), (1, 'теоретическая'), 
              (2, 'оба типа')]
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, unique=True, 
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, 
                                verbose_name='Учебная программа')
-    theme = models.ForeignKey(Theme, on_delete=models.CASCADE, unique=True,
+    theme = models.ForeignKey(Theme, on_delete=models.CASCADE,
                               verbose_name='Тема')
     number = models.CharField('Номер темы в курсе', max_length=5)
-    hours = models.IntegerField('Количество часов')
+    hours = models.FloatField('Количество часов')
     theme_type = models.IntegerField('Тип темы', choices=TYPES)
 
     def __str__(self):
@@ -101,8 +101,19 @@ class CourseTheme(models.Model):
         verbose_name_plural = 'Темы курса'
 
 
-# сlass Group(models.Model):
-#     pass
+class Group(models.Model):
+    course = models.ForeignKey(Course, verbose_name='Учебная программа', on_delete=models.CASCADE)
+    count = models.IntegerField('Количество человек в группе')
+
+    class Meta:
+        verbose_name = 'Группа'
+        verbose_name_plural = 'Группы'
+
+
+class GroupTheme(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    theme = models.ForeignKey(Theme, on_delete=models.CASCADE)
+    hours_left = models.FloatField()
 
 
 class Classroom(models.Model):
@@ -139,6 +150,7 @@ class Lesson(models.Model):
                                       verbose_name='Время проведения лекции')
     date = models.DateField('Дата')
     themes = models.ManyToManyField(CourseTheme, verbose_name='Темы лекции')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, verbose_name='Группа', null=True)
 
     class Meta:
         verbose_name = 'Лекция'
