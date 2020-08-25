@@ -1,7 +1,6 @@
-
-from glob import glob
-import os
 import pandas as pd
+from munkres import Munkres, print_matrix
+import numpy as np
 
 
 db_example = 'тут будет прикрепленная дбшка по которой буду исправлять логику'
@@ -101,6 +100,10 @@ class Planner:
     def planning_a_schedule(planner):
 
         """
+        ____________________________________________________________
+
+        # $$$$$$$$$$$$$$$$$$$$$$$$$$$$ Вложенные циклы ~O(n!)
+
         ITER = list(schedule.itertuples(index=True))
 
         for day in ITER:
@@ -132,7 +135,11 @@ class Planner:
 
                                             break
                                                                                          #Добавить элемент рандома, чтобы человеческим глазом подобрать более подходящее расписание
-        """
+
+
+    _______________________________________________________________________________
+
+        # $$$$$$$$$$$$$$$$        Функциональный перебор ~ O(n^в какой-то довольно большой степени)  .предположительно. Никаких тестов
 
         def check_for_free_cabinet(date, time, cabinet):
             def check_for_free_course_groups(date, time, course):
@@ -217,3 +224,88 @@ class Planner:
             else:
                 print('Группам этого курса ничего не надо.')
                 return False
+
+        __________________________________________________
+
+        #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$       Венгерский алгоритм O(n^3) Для каждой матрицы
+        """
+
+        def check_for_free_classrooms(date, time, classrooms, schedule):
+            lock_names = []
+            free_classrooms = []
+            for lesson in schedule.loc[date, time]:
+                lock_names.append(lesson.name)
+
+            for classroom in classrooms:
+                if classroom.name not in lock_names:
+                    free_classrooms.append(classroom)
+
+            return free_classrooms
+
+        def reverse_matrix(matrix_np):
+            max = np.max(matrix_np)
+            return np.fromiter(map(lambda el: max - el, matrix_np))
+
+
+        def square_matrix(matrix_pd):
+
+            w = len(matrix_pd.columns)
+            h = len(matrix_pd.index)
+
+            for i in range(w - h):
+                matrix_pd.loc['Empty slot ' + str(i)] = 0
+            for j in range(h - w):
+                matrix_pd['Empty slot ' + str(j)] = 0
+
+            return matrix_pd
+
+        def check_for_need_themes(date, time, groups):
+            need_themes = []
+            for group in groups:
+                 need_themes.append(group.theme) #cделать связность группы и актуальной темы и переделать все циклы под map(lambda...)
+
+            return need_themes
+
+        def calculate_matrix_for_teachers_classrooms(need_themes, teachers, classrooms):
+            munkres = Munkres()
+
+            matrix_pd = pd.DataFrame(columns=classrooms.map(lambda c: c.name), index=teachers.map(lambda c: c.name))
+            for classroom in enumerate(classrooms):
+                for teacher in enumerate(teachers):
+                    matrix_pd.iloc[teacher[0], classroom[0]] = set(need_themes) & set(teacher[1].themes) & set(classroom[1].themes)
+
+            matrix_pd = square_matrix(matrix_pd)
+
+            matrix_np_with_themes = matrix_pd.values
+            matrix_np_with_numbers = matrix_np_with_themes.map(lambda themes: len(themes))
+            matrix_np = reverse_matrix(matrix_np_with_numbers)
+            index = munkres.calculate(matrix_np_with_numbers)
+
+            total = 0
+            triplets = []
+            for row, column in index:
+                value = matrix_pd.iloc[row, column]
+                total += value
+                triplets.append([matrix_pd.index[row], matrix_pd.columns[column], len(matrix_pd.iloc[row, column]), matrix_pd.iloc[row, column]])
+                #print(f'({row}, {column}) -> {total}')
+            #print(f'total profit = {total}')
+
+            matrix_triplets = pd.DataFrame(columns=('Учитель', 'Кабинет', 'Кол-во доступных тем', 'Доступные темы:'), data=triplets).sort_values('Доступных тем').reset_index(drop=True)
+
+            #matrix_triplets['Доступные темы'].apply(check_for_intersections, axis=1, raw=True, result_type=None)
+
+
+            return matrix
+
+
+        algorithm = Munkres()
+
+        schedule = planner.freeschedule
+        ITER = list(schedule.itertuples(index=True))
+
+        for day in ITER:
+            for slot in enumerate(day[1:]):
+                free_classrooms = check_for_free_classrooms(day[0], slot[0], planner.classrooms, schedule)
+
+
+
